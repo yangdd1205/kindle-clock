@@ -3,10 +3,9 @@
 PWD=$(pwd)
 #LOG="/mnt/us/clock.log"
 LOG="/dev/null"
-FBINK="/mnt/us/extensions/MRInstaller/bin/K5/fbink -q"
-FONT="regular=/usr/java/lib/fonts/Palatino-Regular.ttf"
+FBINK="/mnt/us/extensions/MRInstaller/bin/PW2/fbink -q"
+FONT="regular=/mnt/us/fonts/Mi-Lanting.ttf"
 #FONT="regular=/usr/java/lib/fonts/Caecilia_LT_75_Bold.ttf"
-CITY="Hamburg"
 COND="---"
 TEMP="---"
 
@@ -18,16 +17,18 @@ TEMP="---"
 #TEMP_SENSOR="/sys/devices/virtual/i2c-adapter/i2c-1/1-0048/papyrus_temperature"
 
 #PW3
-#FBROTATE="echo 0 > /sys/devices/platform/imx_epdc_fb/graphics/fb0/rotate"
+#控制横屏
+FBROTATE="echo 0 > /sys/devices/platform/imx_epdc_fb/graphics/fb0/rotate"
 #BACKLIGHT="/sys/devices/platform/imx-i2c.0/i2c-0/0-003c/max77696-bl.0/backlight/max77696-bl/brightness"
-#BATTERY="/sys/devices/system/wario_battery/wario_battery0/battery_capacity"
-#TEMP_SENSOR="/sys/devices/virtual/i2c-adapter/i2c-1/1-0068/papyrus_temperature"
+#电量
+BATTERY="/sys/devices/system/wario_battery/wario_battery0/battery_capacity"
+TEMP_SENSOR="/sys/devices/virtual/i2c-adapter/i2c-1/1-0068/papyrus_temperature"
 
 #PW2
-FBROTATE="echo -n 0 > /sys/devices/platform/mxc_epdc_fb/graphics/fb0/rotate"
+#FBROTATE="echo -n 0 > /sys/devices/platform/mxc_epdc_fb/graphics/fb0/rotate"
 BACKLIGHT="/sys/devices/system/fl_tps6116x/fl_tps6116x0/fl_intensity"
-BATTERY="/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity"
-TEMP_SENSOR="/sys/devices/virtual/i2c-adapter/i2c-1/1-0068/papyrus_temperature"
+#BATTERY="/sys/devices/system/yoshi_battery/yoshi_battery0/battery_capacity"
+#TEMP_SENSOR="/sys/devices/virtual/i2c-adapter/i2c-1/1-0068/papyrus_temperature"
 
 wait_for_wifi() {
   return `lipc-get-prop com.lab126.wifid cmState | grep -e "CONNECTED" | wc -l`
@@ -36,8 +37,8 @@ wait_for_wifi() {
 
 ### Updates weather info
 update_weather() {
-    WEATHER=$(curl -s -f -m 5 https://de.wttr.in/$CITY?format="%C,+%t" )
-#     WEATHER=$(curl -v -s -f -m 5 https://de.wttr.in/$CITY?format="%C,+%t" 2>> $LOG)
+    echo "`date '+%Y-%m-%d_%H:%M:%S'`: update_weather" >> $LOG
+    WEATHER=$(curl -s -f -m 5 http://zh-cn.wttr.in\?format\="%C,+%t" )
     RC=$?
     echo "`date '+%Y-%m-%d_%H:%M:%S'`: Got weather data. ($WEATHER, RC=$RC)" >> $LOG
     if [ ! -z "$WEATHER" ]; then
@@ -95,7 +96,7 @@ echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 lipc-set-prop com.lab126.powerd preventScreenSaver 1
 
 ### set time/weather as we start up
-ntpdate -s de.pool.ntp.org
+ntpdate -s pool.ntp.org
 update_weather
 clear_screen
 
@@ -140,7 +141,7 @@ while true; do
         if [ `lipc-get-prop com.lab126.wifid cmState` = "CONNECTED" ]; then
             ### Finally, set time
             echo "`date '+%Y-%m-%d_%H:%M:%S'`: Setting time..." >> $LOG
-            ntpdate -s de.pool.ntp.org
+            ntpdate -s pool.ntp.org
             RC=$?
             echo "`date '+%Y-%m-%d_%H:%M:%S'`: Time set. ($RC)" >> $LOG
             update_weather
@@ -155,17 +156,18 @@ while true; do
     #BAT=$(gasgauge-info -s)
     BAT=$(cat $BATTERY)
     TIME=$(date '+%H:%M')
-    DATE=$(date '+%A, %-d. %B %Y')
+    # DATE=$(date '+%A, %-d. %B %Y')
+    DATE=$(date '+%a,%Y/%m/%d')
     INSIDE_TEMP_C=$(cat $TEMP_SENSOR)
     # convert to centigrade
     #let INSIDE_TEMP_C="($INSIDE_TEMP_F-32)*5/9"
 
-    ## adjust coordinates according to display resolution. This is for PW2.
+    ## adjust coordinates according to display resolution. This is for PW3.
     $FBINK -b -c -m -t $FONT,size=150,top=10,bottom=0,left=0,right=0 "$TIME"
-    $FBINK -b -m -t $FONT,size=20,top=410,bottom=0,left=0,right=0 "$DATE"
-    $FBINK -b    -t $FONT,size=10,top=0,bottom=0,left=900,right=0 "Bat: $BAT"
-    $FBINK -b -m -t $FONT,size=20,top=510,bottom=0,left=0,right=0 "$COND"
-    $FBINK -b -m -t $FONT,size=30,top=600,bottom=0,left=0,right=0 "$TEMP | $INSIDE_TEMP_C°C"
+    $FBINK -b -m -t $FONT,size=20,top=710,bottom=0,left=0,right=0 "$DATE"
+    $FBINK -b    -t $FONT,size=10,top=0,bottom=0,left=1050,right=0 "Bat: $BAT%"
+  #  $FBINK -b -m -t $FONT,size=20,top=710,bottom=0,left=0,right=0 "$COND"
+    $FBINK -b -m -t $FONT,size=30,top=850,bottom=0,left=0,right=0 "$COND  $TEMP"
     if [ "$NOWIFI" = "1" ]; then
         $FBINK -b -t $FONT,size=10,top=0,bottom=0,left=50,right=0 "No Wifi!"
     fi
