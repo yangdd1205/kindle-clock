@@ -157,15 +157,31 @@ while true; do
     BAT=$(cat $BATTERY)
     TIME=$(date '+%H:%M')
     # DATE=$(date '+%A, %-d. %B %Y')
-    DATE=$(date '+%a,%Y/%m/%d')
+    DATE=$(date '+%Y年%m月%d日')
+    WEEK=$(date '+%w')
+    if [ $WEEK -eq 0 ]; then
+        WEEK_CN='星期天'
+    elif [ $WEEK -eq 1 ]; then
+        WEEK_CN='星期一'
+    elif [ $WEEK -eq 2 ]; then
+        WEEK_CN='星期二'
+    elif [ $WEEK -eq 3 ]; then
+        WEEK_CN='星期三'
+    elif [ $WEEK -eq 4 ]; then
+        WEEK_CN='星期四'  
+    elif [ $WEEK -eq 5 ]; then
+        WEEK_CN='星期五'  
+    elif [ $WEEK -eq 6 ]; then
+        WEEK_CN='星期六'
+    fi                            
     INSIDE_TEMP_C=$(cat $TEMP_SENSOR)
     # convert to centigrade
     #let INSIDE_TEMP_C="($INSIDE_TEMP_F-32)*5/9"
 
     ## adjust coordinates according to display resolution. This is for PW3.
     $FBINK -b -c -m -t $FONT,size=150,top=10,bottom=0,left=0,right=0 "$TIME"
-    $FBINK -b -m -t $FONT,size=20,top=710,bottom=0,left=0,right=0 "$DATE"
-    $FBINK -b    -t $FONT,size=10,top=0,bottom=0,left=1050,right=0 "Bat: $BAT%"
+    $FBINK -b -m -t $FONT,size=20,top=680,bottom=0,left=0,right=0 "$DATE $WEEK_CN"
+    $FBINK -b    -t $FONT,size=10,top=0,bottom=0,left=1300,right=0 "Bat: $BAT%"
   #  $FBINK -b -m -t $FONT,size=20,top=710,bottom=0,left=0,right=0 "$COND"
     $FBINK -b -m -t $FONT,size=30,top=850,bottom=0,left=0,right=0 "$COND  $TEMP"
     if [ "$NOWIFI" = "1" ]; then
